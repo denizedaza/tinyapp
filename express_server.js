@@ -1,5 +1,7 @@
 const express = require("express");
 const cookieParser = require("cookie-parser");
+const { generateRandomString, ifEmailExistsInUser, authenticateUser, urlsForUser } = require("./helpers");
+const bcrypt = require("bcryptjs");
 const app = express();
 const PORT = 8080; // default port 8080
 
@@ -8,6 +10,10 @@ app.use(cookieParser());
 
 const bodyParser = require("body-parser");
 app.use(bodyParser.urlencoded({extended: true}));
+
+const salt = bcrypt.genSaltSync(10);
+const user1Password = bcrypt.hashSync("purple-monkey-dinosaur", salt);
+const user2Password = bcrypt.hashSync("dishwasher-funk", salt);
 
 const urlDatabase = {
   b2xVn2: {
@@ -24,42 +30,14 @@ const users = {
   "userRandomID": {
     id: "userRandomID", 
     email: "user@example.com", 
-    password: "purple-monkey-dinosaur"
+    password: user1Password
   },
  "user2RandomID": {
     id: "user2RandomID", 
     email: "user2@example.com", 
-    password: "dishwasher-funk"
+    password: user2Password
   }
 }
-
-const ifEmailExistsInUser = (email, userDatabase) => {
-  for(const user in userDatabase) {
-    if(userDatabase[user].email === email) {
-      return userDatabase[user];
-    }
-  }
-  return false;
-};
-
-const authenticateUser = (email, password, database) => {
-  const userFound = ifEmailExistsInUser(email, database);
-
-  if (userFound && userFound.password === password) {
-    return userFound;
-  }
-  return false;
-};
-
-const urlsForUser = (id, database) => {
-  const userUrls = {};
-  for(const shortUrl in database) {
-    if (database[shortUrl].userID === id) {
-      userUrls[shortUrl] = database[shortUrl];
-    }
-  }
-  return userUrls;
-};
 
 app.get("/", (req, res) => {
   res.send("Hello!");
@@ -145,10 +123,6 @@ app.get("/u/:shortURL", (req, res) => {
   }
 
 })
-
-function generateRandomString() {
-  return Math.random().toString(36).substr(2, 6);
-};
 
 //accept registration info
 app.get("/register", (req, res) => {
