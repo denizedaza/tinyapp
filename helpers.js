@@ -1,4 +1,5 @@
 const bcrypt = require("bcryptjs");
+const salt = bcrypt.genSaltSync(10);
 
 function generateRandomString() {
   return Math.random().toString(36).substr(2, 6);
@@ -10,20 +11,21 @@ const ifEmailExistsInUser = (email, userDatabase) => {
       return userDatabase[user];
     }
   }
-  return false;
+  return undefined;
 };
 
 const authenticateUser = (email, password, database) => {
   const userFound = ifEmailExistsInUser(email, database);
-
+  const hashedPassword = bcrypt.hashSync(password, salt);
 
   if (userFound) {
-    if (bcrypt.compareSync(userFound.password, password)) {
+    // console.log("userfound:", userFound)
+    if (bcrypt.compareSync(userFound.password, hashedPassword)) { //ask here
       return userFound;
     }
-    return false;
+    return undefined;
   }
-  return false;
+  return undefined;
 };
 
 const urlsForUser = (id, database) => {
@@ -39,10 +41,10 @@ const urlsForUser = (id, database) => {
 const getUserByEmail = (email, database) => {
   for(const user in database) {
     if (database[user].email === email){
-      return database[user];
+      return database[user].id;
     }
   }
-  return false;
+  return undefined;
 }
 
 module.exports = {
