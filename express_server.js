@@ -5,7 +5,7 @@ const bcrypt = require("bcryptjs");
 const cookieSession = require("cookie-session");
 
 const app = express();
-const PORT = 8080; // default port 8080
+const PORT = 8080; 
 
 app.set("view engine", "ejs");
 app.use(cookieParser());
@@ -49,11 +49,7 @@ const users = {
 }
 
 app.get("/", (req, res) => {
-  // res.send("Hello!");
   const userId = req.session.user_id;
-  // const templateVars = { 
-  //   user: users[userId]
-  // };
 
   if (!userId) {
     res.redirect("/login");
@@ -69,8 +65,6 @@ app.get("/urls.json", (req, res) => {
 app.get("/urls", (req, res) => {
   const userId = req.session.user_id;
   const templateVars = {
-    // urls: urlDatabase,
-    //filtered the urls for the logged in user
     urls: urlsForUser(userId, urlDatabase),
     user: users[userId]
   };
@@ -115,7 +109,6 @@ app.get("/urls/:shortURL", (req, res) => {
   };
 
   const usersUrl = urlsForUser(userId, urlDatabase);
-  //create boolean variable to show if the url belong to the user or not
   const urlBelongToUser = usersUrl[req.params.shortURL] && usersUrl[req.params.shortURL].userID === userId
 
   if (!urlBelongToUser) {
@@ -143,14 +136,9 @@ app.get("/u/:shortURL", (req, res) => {
 
 })
 
-//accept registration info
 app.get("/register", (req, res) => {
-  // if (req.cookies["user_id"]) {
-  //   res.redirect("/urls");
-  // }
   const templateVars = {
-    // email = req.params.email,
-    // user: users[req.cookies["user_id"]]
+
     user: req.session.user_id
   }
   res.render("urls_registration", templateVars);
@@ -161,14 +149,12 @@ app.get("/login", (req, res) => {
     res.redirect("/urls");
   }
   const templateVars = {
-    // email = req.params.email,
     user: users[req.session.user_id]
   }
   res.render("urls_login", templateVars);
 })
 
 //POST routes
-
 app.post("/urls/:shortURL/delete", (req, res) => {
   const shortURL = req.params.shortURL;
 
@@ -198,10 +184,6 @@ app.post("/urls", (req, res) => {
   };
 
   res.redirect(`/urls/${shortUrl}`);
-
-  // if (!req.session.user_id) {
-  //   res.status(403).send("<h1>You must be logged in to view this page. Please login or register first</h1>");
-  // }
 });
 
 //login 
@@ -216,7 +198,6 @@ app.post("/login", (req, res) => {
   const user = authenticateUser(email, password, users);
 
   if (user) {
-    // res.cookie("user_id", user.id);
     req.session.user_id = user.id;
     res.redirect("/urls");
   } else {
@@ -237,7 +218,6 @@ app.post("/register", (req, res) => {
   const email = req.body.email;
   const password = req.body.password;
 
-  //if the email or password are empty strings, send back 400 status error
   if (!email || !password) {
     res.status(400).send("Please include both a valid email and a password");
   }
@@ -254,7 +234,6 @@ app.post("/register", (req, res) => {
 
   users[id] = newUser;
 
-  // res.cookie("user_id", id);
   req.session.user_id = id;
   console.log("users obj:", users);
   res.redirect("/urls");
