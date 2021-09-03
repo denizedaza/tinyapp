@@ -15,11 +15,14 @@ app.use(cookieSession({
 }))
 
 const bodyParser = require("body-parser");
-app.use(bodyParser.urlencoded({extended: true}));
+app.use(bodyParser.urlencoded({ extended: true }));
 
 const salt = bcrypt.genSaltSync(10);
 const user1Password = bcrypt.hashSync("purple-monkey-dinosaur", salt);
 const user2Password = bcrypt.hashSync("dishwasher-funk", salt);
+
+console.log("user1Password:", user1Password);
+console.log("user2Password:", user2Password);
 
 const urlDatabase = {
   b2xVn2: {
@@ -34,19 +37,29 @@ const urlDatabase = {
 
 const users = {
   "userRandomID": {
-    id: "userRandomID", 
-    email: "user@example.com", 
+    id: "userRandomID",
+    email: "user@example.com",
     password: user1Password
   },
- "user2RandomID": {
-    id: "user2RandomID", 
-    email: "user2@example.com", 
+  "user2RandomID": {
+    id: "user2RandomID",
+    email: "user2@example.com",
     password: user2Password
   }
 }
 
 app.get("/", (req, res) => {
-  res.send("Hello!");
+  // res.send("Hello!");
+  const userId = req.session.user_id;
+  // const templateVars = { 
+  //   user: users[userId]
+  // };
+
+  if (!userId) {
+    res.redirect("/login");
+  };
+  res.redirect("/urls");
+
 });
 
 app.get("/urls.json", (req, res) => {
@@ -63,7 +76,7 @@ app.get("/urls", (req, res) => {
   };
 
   if (!userId) {
-    res.status(403).send("<h1>You must be logged in or register to access URLs</h1>");
+    res.status(403).send("<h1>You must be <a href=\"/login\">logged in</a> or <a href=\"/register\">registered</a> to access URLs</h1>");
   }
 
   res.render("urls_index", templateVars);
@@ -78,10 +91,10 @@ app.get("/urls", (req, res) => {
 
 app.get("/urls/new", (req, res) => {
   const userId = req.session.user_id;
-  const templateVars = { 
-    user: users[userId]
+  const templateVars = {
+    user: users[req.session.user_id]
   };
-  
+
   if (!userId) {
     res.status(403).send("You must be a registered user to add new URLs");
     res.redirect("/login");
@@ -94,16 +107,16 @@ app.get("/urls/:shortURL", (req, res) => {
   const userId = req.session.user_id;
   const shortURL = req.params.shortURL;
   const longURL = urlDatabase[shortURL].longURL
-  const templateVars = { 
-    shortURL, 
+  const templateVars = {
+    shortURL,
     longURL,
     urlUserId: urlDatabase[req.params.shortURL].userID,
-    user: users[userId]
+    user: users[req.session.user_id]
   };
 
   const usersUrl = urlsForUser(userId, urlDatabase);
   //create boolean variable to show if the url belong to the user or not
-const urlBelongToUser = usersUrl[req.params.shortURL] && usersUrl[req.params.shortURL].userID === userId
+  const urlBelongToUser = usersUrl[req.params.shortURL] && usersUrl[req.params.shortURL].userID === userId
 
   if (!urlBelongToUser) {
     res.status(403).send("<h1>You must be logged in or register to access URLs</h1>");
@@ -136,10 +149,10 @@ app.get("/register", (req, res) => {
   //   res.redirect("/urls");
   // }
   const templateVars = {
-      // email = req.params.email,
-      // user: users[req.cookies["user_id"]]
-      user: req.session.user_id
-    }
+    // email = req.params.email,
+    // user: users[req.cookies["user_id"]]
+    user: req.session.user_id
+  }
   res.render("urls_registration", templateVars);
 });
 
@@ -158,8 +171,8 @@ app.get("/login", (req, res) => {
 
 app.post("/urls/:shortURL/delete", (req, res) => {
   const shortURL = req.params.shortURL;
-  
-  if (urlDatabase[shortURL] && req.session.user_id === urlDatabase[shortURL].userID){
+
+  if (urlDatabase[shortURL] && req.session.user_id === urlDatabase[shortURL].userID) {
     delete urlDatabase[shortURL];
     res.redirect("/urls");
   }
@@ -168,7 +181,7 @@ app.post("/urls/:shortURL/delete", (req, res) => {
 
 app.post("/urls/:id", (req, res) => {
   const shortUrlId = req.params.id;
-  if (urlDatabase[shortUrlId] && req.session.user_id === urlDatabase[shortUrlId].userID){
+  if (urlDatabase[shortUrlId] && req.session.user_id === urlDatabase[shortUrlId].userID) {
     urlDatabase[shortUrlId].longURL = req.body.newURL;
     res.redirect("/urls");
   }
@@ -209,25 +222,23 @@ app.post("/login", (req, res) => {
   } else {
     res.status(403).send("Incorrect email or password information");
   }
-
-
   res.redirect("/urls");
 });
 
 app.post("/logout", (req, res) => {
-  req.session.user_id = null;
+  req.session = null;
 
   res.redirect("/urls");
 });
 
 app.post("/register", (req, res) => {
-  
+
   const id = generateRandomString();
   const email = req.body.email;
   const password = req.body.password;
 
   //if the email or password are empty strings, send back 400 status error
-  if ( !email || !password ) {
+  if (!email || !password) {
     res.status(400).send("Please include both a valid email and a password");
   }
 
@@ -236,8 +247,8 @@ app.post("/register", (req, res) => {
   }
 
   const newUser = {
-    id, 
-    email, 
+    id,
+    email,
     password
   };
 
