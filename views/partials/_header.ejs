@@ -12,8 +12,8 @@
     </div>
 
     <% if (!user) { %>
-    <a href="/login">Login</a>
-    <a href="/register">Register</a>
+    <a class="nav-item nav-link" style="margin: 1em" href="/login">Login</a>
+    <a class="nav-item nav-link" style="margin: 1em" href="/register">Register</a>
     <% } else { %>
       <label>Logged in as: <%= user.email %> </label>
       <form method="POST" action="/logout">
