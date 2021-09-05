@@ -1,5 +1,4 @@
 const bcrypt = require("bcryptjs");
-const salt = bcrypt.genSaltSync(10);
 
 function generateRandomString() {
   return Math.random().toString(36).substr(2, 6);
@@ -15,10 +14,9 @@ const ifEmailExistsInUser = (email, userDatabase) => {
 
 const authenticateUser = (email, password, database) => {
   const userFound = ifEmailExistsInUser(email, database);
-  const hashedPassword = bcrypt.hashSync(password, salt);
 
   if (userFound) {
-    if (bcrypt.compareSync(userFound.password, hashedPassword)) {
+    if (bcrypt.compareSync(password, userFound.password)) {
       return userFound;
     }
     return;
