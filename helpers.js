@@ -11,26 +11,18 @@ const ifEmailExistsInUser = (email, userDatabase) => {
       return userDatabase[user];
     }
   }
-  return undefined;
 };
 
 const authenticateUser = (email, password, database) => {
   const userFound = ifEmailExistsInUser(email, database);
-  // const hashedPassword = bcrypt.hashSync(password, salt);
+  const hashedPassword = bcrypt.hashSync(password, salt);
 
   if (userFound) {
-    // console.log("password", password)
-    // console.log("password", userFound.password)
-    // console.log("userfound", userFound)
-    // console.log("compare", bcrypt.compareSync(userFound.password, hashedPassword))
-    if (bcrypt.compareSync(password, userFound.password)) {
+    if (bcrypt.compareSync(userFound.password, hashedPassword)) {
       return userFound;
     }
-    // console.log("password not match")
-    return undefined;
+    return;
   }
-  // console.log("user not found")
-  return undefined;
 };
 
 const urlsForUser = (id, database) => {
@@ -49,7 +41,6 @@ const getUserByEmail = (email, database) => {
       return database[user].id;
     }
   }
-  return undefined;
 }
 
 module.exports = {
