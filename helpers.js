@@ -3,7 +3,7 @@ const salt = bcrypt.genSaltSync(10);
 
 function generateRandomString() {
   return Math.random().toString(36).substr(2, 6);
-};
+}
 
 const ifEmailExistsInUser = (email, userDatabase) => {
   for (const user in userDatabase) {
@@ -41,7 +41,7 @@ const getUserByEmail = (email, database) => {
       return database[user].id;
     }
   }
-}
+};
 
 module.exports = {
   generateRandomString,
