@@ -1,5 +1,4 @@
 const express = require("express");
-const cookieParser = require("cookie-parser");
 const { generateRandomString, ifEmailExistsInUser, authenticateUser, urlsForUser } = require("./helpers");
 const bcrypt = require("bcryptjs");
 const cookieSession = require("cookie-session");
@@ -8,7 +7,6 @@ const app = express();
 const PORT = 8080;
 
 app.set("view engine", "ejs");
-app.use(cookieParser());
 app.use(cookieSession({
   name: 'session',
   keys: ['key1', 'key2']
@@ -61,7 +59,7 @@ app.get("/urls.json", (req, res) => {
 
 app.get("/urls", (req, res) => {
   const userId = req.session.user_id;
-  
+
   const templateVars = {
     urls: urlsForUser(userId, urlDatabase),
     user: users[userId]
@@ -90,7 +88,15 @@ app.get("/urls/new", (req, res) => {
 
 app.get("/urls/:shortURL", (req, res) => {
   const userId = req.session.user_id;
+  if (!userId) {
+    return res.status(403).send("<h1>You must be logged in or register to access URLs</h1>");
+  }
+
   const shortURL = req.params.shortURL;
+  if (!urlDatabase[shortURL]) {
+    return res.status(403).send("The short URL you are trying to access does not exist");
+  }
+
   const longURL = urlDatabase[shortURL].longURL;
 
   const templateVars = {
@@ -101,33 +107,36 @@ app.get("/urls/:shortURL", (req, res) => {
   };
 
   const usersUrl = urlsForUser(userId, urlDatabase);
+  // boolean value for whether the shortURL exists for the user and if the user signed in matches the userID found for this shortURL
   const urlBelongToUser = usersUrl[shortURL] && usersUrl[shortURL].userID === userId;
 
   if (!urlBelongToUser) {
     return res.status(403).send("<h1>You are not authorized to edit this URL</h1>");
-    return;
   }
 
-  if (!userId) {
-    return res.status(403).send("<h1>You must be logged in or register to access URLs</h1>");
-  }
   res.render("urls_show", templateVars);
-});
-
-app.get("/hello", (req, res) => {
-  res.send("<html><body>Hello <b>World</b></body></html>\n");
 });
 
 app.get("/u/:shortURL", (req, res) => {
   const shortURL = req.params.shortURL;
-  const longURL = urlDatabase[shortURL].longURL;
-  
-  if (urlDatabase[shortURL]) {
-    return res.redirect(longURL);
-  } else {
+  if (!urlDatabase[shortURL]) {
     res.status(403).send("The short URL you are trying to access does not exist");
     return;
   }
+
+  let longURLInput = urlDatabase[shortURL].longURL;
+
+  // checking if user only types website without address heads (?) (ie only 'youtube.com'); otherwise will get 'undefined' error on longURL
+  const httpWebAddr = "http://www.";
+  const webAddr = "http://";
+
+  if (!longURLInput.includes(httpWebAddr)) {
+    longURLInput = httpWebAddr.concat(longURLInput);
+  }
+  if (!longURLInput.includes(webAddr)) {
+    longURLInput = webAddr.concat(longURLInput);
+  }
+  return res.redirect(longURLInput);
 });
 
 app.get("/register", (req, res) => {
@@ -148,6 +157,8 @@ app.get("/login", (req, res) => {
   res.render("urls_login", templateVars);
 });
 
+
+//-------- POST routes ----------- 
 app.post("/urls/:shortURL/delete", (req, res) => {
   const shortURL = req.params.shortURL;
 
